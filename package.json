@@ -1,0 +1,17 @@
+{
+"name": "ecommerce-monorepo",
+"private": true,
+"packageManager": "pnpm@10.20.0",
+"scripts": {
+"dev:db": "docker compose -f docker-compose.dev.yml up -d",
+"dev:auth": "pnpm --filter auth-customer dev",
+"dev:gw": "pnpm --filter api-gateway dev",
+"dev:web": "pnpm --filter web-shop dev",
+"dev:admin": "pnpm --filter admin-panel dev",
+"dev": "run-p dev:db dev:auth dev:gw dev:web dev:admin"
+},
+"devDependencies": {
+"npm-run-all": "^4.1.5",
+"typescript": "^5.6.2"
+}
+}
