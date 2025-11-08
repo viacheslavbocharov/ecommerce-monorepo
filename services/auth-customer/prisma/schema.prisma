@@ -1,12 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+   output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -32,10 +26,11 @@ model User {
 }
 
 model Profile {
-  userId   String  @id
-  fullName String?
-  phone    String?
-  user     User    @relation(fields: [userId], references: [id])
+  userId    String  @id
+  firstName String
+  lastName  String
+  phone     String?
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model RefreshToken {
@@ -43,7 +38,11 @@ model RefreshToken {
   userId     String
   jti        String   @unique
   revoked    Boolean  @default(false)
+  replacedBy String?   
   createdAt  DateTime @default(now())
   expiresAt  DateTime
-  user       User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revoked])
+  @@index([expiresAt])
 }
