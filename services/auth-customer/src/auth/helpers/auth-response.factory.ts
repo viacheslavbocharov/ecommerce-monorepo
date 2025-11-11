@@ -1,3 +1,4 @@
+import { CookieSerializeOptions } from '@fastify/cookie';
 import { ConfigService } from '@nestjs/config';
 import { PublicUser } from 'src/common/contracts/user/public-user.type';
 
@@ -8,14 +9,24 @@ export interface TokenResponseOptions {
   refreshToken: string;
 }
 
+export const buildRefreshCookieBase = (
+  config: ConfigService,
+): CookieSerializeOptions => {
+  const isProd = config.get('NODE_ENV') === 'production';
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    path: '/',
+  } as const;
+};
+
 export const buildAuthResponse = ({
   config,
   user,
   accessToken,
   refreshToken,
 }: TokenResponseOptions) => {
-  const isProd = config.get('NODE_ENV') === 'production';
-
   return {
     user,
     accessToken,
@@ -23,10 +34,7 @@ export const buildAuthResponse = ({
       name: 'refreshToken',
       value: refreshToken,
       options: {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? 'none' : 'lax',
-        path: '/',
+        ...buildRefreshCookieBase(config),
         maxAge: Number(config.get<string>('JWT_REFRESH_TTL') ?? '2592000'),
       } as const,
     },

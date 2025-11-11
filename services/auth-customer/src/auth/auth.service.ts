@@ -13,6 +13,7 @@ import { TokenService } from './token.service';
 import { publicUserSelect } from 'src/common/contracts/user/public-user.select';
 import { buildAuthResponse } from './helpers/auth-response.factory';
 import { JwtService } from '@nestjs/jwt';
+import { JwtRefreshPayload } from 'src/common/contracts/jwt/jwt-payload.types';
 
 @Injectable()
 export class AuthService {
@@ -129,7 +130,33 @@ export class AuthService {
     });
   }
 
-  // logout(refreshToken) {}
+  async logout(refreshToken: string): Promise<void> {
+    if (!refreshToken) return;
+
+    let payload: JwtRefreshPayload | null = null;
+
+    try {
+      payload = await this.jwt.verifyAsync<JwtRefreshPayload>(refreshToken);
+    } catch {
+      return;
+    }
+
+    if (!payload.jti) return;
+
+    await this.prisma.refreshToken.update({
+      where: { jti: payload?.jti },
+      data: { revoked: true },
+    });
+  }
+
+  async logoutAll(userId: string): Promise<void> {
+    if (!userId) return;
+
+    await this.prisma.refreshToken.updateMany({
+      where: { userId, revoked: false },
+      data: { revoked: true },
+    });
+  }
 
   // me(userId) {}
 }

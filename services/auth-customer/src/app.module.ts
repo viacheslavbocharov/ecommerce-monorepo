@@ -3,7 +3,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -13,16 +15,32 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     }),
     JwtModule.registerAsync({
       global: true,
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET', 'dev'),
-        // signOptions: { expiresIn: '15m' },
-      }),
+      useFactory: () => {
+        const privateKey = readFileSync(
+          join(__dirname, '..', 'keys', 'private.pem'),
+          'utf8',
+        );
+        const publicKey = readFileSync(
+          join(__dirname, '..', 'keys', 'public.pem'),
+          'utf8',
+        );
+
+        return {
+          privateKey,
+          publicKey,
+          signOptions: {
+            algorithm: 'RS256',
+            issuer: 'auth',
+            audience: 'api',
+          },
+          verifyOptions: {
+            algorithms: ['RS256'],
+            issuer: 'auth',
+            audience: 'api',
+          },
+        };
+      },
     }),
-    // JwtModule.register({
-    //   global: true,
-    //   secret: process.env.JWT_SECRET ?? 'dev',
-    // }),
     AuthModule,
   ],
   controllers: [AppController],
