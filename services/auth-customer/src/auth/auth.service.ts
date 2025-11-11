@@ -1,17 +1,25 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-
 import { PrismaClient } from 'src/generated/prisma/client';
 import * as argon2 from 'argon2';
-import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { TokenService } from './token.service';
+import { publicUserSelect } from 'src/common/contracts/user/public-user.select';
+import { buildAuthResponse } from './helpers/auth-response.factory';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly config: ConfigService,
+    private readonly token: TokenService,
     private readonly jwt: JwtService,
   ) {}
 
@@ -28,7 +36,7 @@ export class AuthService {
       type: argon2.argon2id,
     });
 
-    const user = await this.prisma.user.create({
+    const publicUser = await this.prisma.user.create({
       data: {
         email: registerDto.email,
         passwordHash: passwordHash,
@@ -40,75 +48,88 @@ export class AuthService {
           },
         },
       },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        profile: {
-          select: {
-            firstName: true,
-            lastName: true,
-            phone: true,
-          },
-        },
-      },
+      select: publicUserSelect,
     });
 
-    const jti = crypto.randomUUID();
-    const refreshExpiresAt = new Date(
-      Date.now() +
-        Number(this.config.get<string>('JWT_REFRESH_TTL', '2592000')) * 1000,
-    );
-
-    await this.prisma.refreshToken.create({
-      data: {
-        jti,
-        userId: user.id,
-        expiresAt: refreshExpiresAt,
-      },
+    const { accessToken, refreshToken } = await this.token.createTokens({
+      sub: publicUser.id,
+      role: publicUser.role,
     });
 
-    const accessToken = this.jwt.sign(
-      { sub: user.id, role: user.role },
-      { expiresIn: Number(this.config.get<string>('JWT_ACCESS_TTL') ?? '900') },
-    );
-
-    const refreshToken = this.jwt.sign(
-      { sub: user.id, role: user.role, jti },
-      {
-        expiresIn: Number(
-          this.config.get<string>('JWT_REFRESH_TTL') ?? '2592000',
-        ),
-      },
-    );
-
-    return {
-      user,
+    return buildAuthResponse({
+      config: this.config,
+      user: publicUser,
       accessToken,
-      refreshCookie: {
-        name: 'refreshToken',
-        value: refreshToken,
-        options: {
-          httpOnly: true,
-          secure: this.config.get('NODE_ENV') === 'production',
-          sameSite:
-            this.config.get('NODE_ENV') === 'production' ? 'none' : 'lax',
-          path: '/',
-          maxAge: Number(
-            this.config.get<string>('JWT_REFRESH_TTL') ?? '2592000',
-          ),
-        } as const,
-      },
-    };
+      refreshToken,
+    });
   }
 
-  login(loginDto: LoginDto) {}
+  async login(loginDto: LoginDto) {
+    const publicUserSelectWithPassword = await this.prisma.user.findUnique({
+      where: { email: loginDto.email },
+      select: {
+        ...publicUserSelect,
+        passwordHash: true,
+      } as const,
+    });
 
-  refresh(refreshToken) {}
+    if (!publicUserSelectWithPassword) {
+      throw new NotFoundException('Invalid email');
+    }
 
-  logout(refreshToken) {}
+    const { passwordHash, ...publicUser } = publicUserSelectWithPassword;
 
-  me(userId) {}
+    const isPasswordMatch = await argon2.verify(passwordHash, loginDto.email);
+
+    if (isPasswordMatch) {
+      const { accessToken, refreshToken } = await this.token.createTokens({
+        sub: publicUser.id,
+        role: publicUser.role,
+      });
+      return buildAuthResponse({
+        config: this.config,
+        user: publicUser,
+        accessToken,
+        refreshToken,
+      });
+    } else {
+      throw new UnauthorizedException('Invalid password');
+    }
+  }
+
+  async refresh(gettedRefreshToken: string) {
+    const payload = await this.token.validateRefreshToken(gettedRefreshToken);
+
+    const { accessToken, refreshToken } = await this.token.createTokens({
+      sub: payload.sub,
+      role: payload.role,
+    });
+
+    const newPayload = await this.token.validateRefreshToken(refreshToken);
+
+    await this.prisma.refreshToken.update({
+      where: { jti: payload.jti },
+      data: { revoked: true, replacedBy: newPayload.jti },
+    });
+
+    const publicUser = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: publicUserSelect,
+    });
+
+    if (!publicUser) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return buildAuthResponse({
+      config: this.config,
+      user: publicUser,
+      accessToken,
+      refreshToken,
+    });
+  }
+
+  // logout(refreshToken) {}
+
+  // me(userId) {}
 }
