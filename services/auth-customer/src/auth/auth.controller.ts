@@ -114,6 +114,10 @@ export class AuthController {
     return;
   }
 
-  @Get()
-  me() {}
+  @Get('me')
+  async me(@Req() req: FastifyRequest & { user: JwtPayload }) {
+    const userId = req.user.sub;
+    const user = await this.authService.me(userId);
+    return user;
+  }
 }

@@ -3,9 +3,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -15,15 +16,18 @@ import { join } from 'path';
     }),
     JwtModule.registerAsync({
       global: true,
-      useFactory: () => {
-        const privateKey = readFileSync(
-          join(__dirname, '..', 'keys', 'private.pem'),
-          'utf8',
-        );
-        const publicKey = readFileSync(
-          join(__dirname, '..', 'keys', 'public.pem'),
-          'utf8',
-        );
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const privateKeyPath =
+          config.get<string>('JWT_PRIVATE_KEY_PATH') ??
+          join(__dirname, '..', 'keys', 'private.pem');
+
+        const publicKeyPath =
+          config.get<string>('JWT_PUBLIC_KEY_PATH') ??
+          join(__dirname, '..', 'keys', 'public.pem');
+
+        const privateKey = readFileSync(privateKeyPath, 'utf8');
+        const publicKey = readFileSync(publicKeyPath, 'utf8');
 
         return {
           privateKey,
@@ -42,6 +46,7 @@ import { join } from 'path';
       },
     }),
     AuthModule,
+    PrismaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

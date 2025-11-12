@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaClient } from 'src/generated/prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 export interface IjwtRefreshBase {
   sub: string;
@@ -14,7 +14,7 @@ export interface IjwtRefreshBase {
 @Injectable()
 export class TokenService {
   constructor(
-    private readonly prisma: PrismaClient,
+    private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly jwt: JwtService,
   ) {}

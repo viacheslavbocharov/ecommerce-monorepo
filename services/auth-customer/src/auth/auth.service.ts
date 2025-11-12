@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { PrismaClient } from 'src/generated/prisma/client';
 import * as argon2 from 'argon2';
 import { ConfigService } from '@nestjs/config';
 import { TokenService } from './token.service';
@@ -14,11 +13,13 @@ import { publicUserSelect } from 'src/common/contracts/user/public-user.select';
 import { buildAuthResponse } from './helpers/auth-response.factory';
 import { JwtService } from '@nestjs/jwt';
 import { JwtRefreshPayload } from 'src/common/contracts/jwt/jwt-payload.types';
+import { PublicUser } from 'src/common/contracts/user/public-user.type';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly prisma: PrismaClient,
+    private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly token: TokenService,
     private readonly jwt: JwtService,
@@ -80,7 +81,10 @@ export class AuthService {
 
     const { passwordHash, ...publicUser } = publicUserSelectWithPassword;
 
-    const isPasswordMatch = await argon2.verify(passwordHash, loginDto.email);
+    const isPasswordMatch = await argon2.verify(
+      passwordHash,
+      loginDto.password,
+    );
 
     if (isPasswordMatch) {
       const { accessToken, refreshToken } = await this.token.createTokens({
@@ -158,5 +162,12 @@ export class AuthService {
     });
   }
 
-  // me(userId) {}
+  async me(userId: string): Promise<PublicUser | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: publicUserSelect,
+    });
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
 }

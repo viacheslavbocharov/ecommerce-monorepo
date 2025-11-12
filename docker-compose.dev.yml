@@ -1,14 +1,38 @@
 services:
-  postgres:
-    image: postgres:16
-    restart: unless-stopped
-    ports: ["5432:5432"]
+  db:
+    image: postgres:16-alpine
     environment:
-      POSTGRES_USER: dev
-      POSTGRES_PASSWORD: dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: ecommerce
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ecommerce"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  auth-customer:
+    build:
+      context: .
+      dockerfile: services/auth-customer/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/ecommerce?schema=public"
+      JWT_ACCESS_TTL: "900"
+      JWT_REFRESH_TTL: "2592000"
+      JWT_PRIVATE_KEY_PATH: "/run/secrets/jwt_private.pem"
+      JWT_PUBLIC_KEY_PATH: "/run/secrets/jwt_public.pem"
+    ports:
+      - "4001:4001"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./services/auth-customer/keys/private.pem:/run/secrets/jwt_private.pem:ro
+      - ./services/auth-customer/keys/public.pem:/run/secrets/jwt_public.pem:ro
+    working_dir: /app/services/auth-customer
 
 volumes:
-  pgdata: {}
+  pgdata:
