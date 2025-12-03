@@ -1,3 +1,3 @@
 export class AdminChangePasswordDto {
-  password: string;
+  newPassword: string;
 }

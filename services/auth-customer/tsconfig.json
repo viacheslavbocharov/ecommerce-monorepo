@@ -14,10 +14,10 @@
     "sourceMap": true,
     "outDir": "./dist",
     "ignoreDeprecations": "5.0",
-    "baseUrl": ".",             // ← обязательно для paths
+    "baseUrl": ".",
     "paths": {
-      "src/*": ["./src/*"],     // поддержка текущих импортов
-      "@/*": ["./src/*"]        // можно использовать и '@/...'
+      "src/*": ["./src/*"],
+      "@/*": ["./src/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

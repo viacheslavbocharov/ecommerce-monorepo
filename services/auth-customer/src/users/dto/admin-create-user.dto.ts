@@ -15,13 +15,11 @@ export class AdminCreateUserDto {
   @MinLength(6)
   password: string;
 
-  @IsOptional()
   @IsString()
-  firstName?: string;
+  firstName: string;
 
-  @IsOptional()
   @IsString()
-  lastName?: string;
+  lastName: string;
 
   @IsOptional()
   @IsString()
