@@ -30,7 +30,7 @@ export class UsersController {
     return this.usersService.updateProfile(req.user.sub, dto);
   }
 
-  @Patch()
+  @Patch('change-password')
   changePasswordMe(@Req() req: FastifyRequest, dto: ChangePasswordDto) {
     if (!req.user) throw new UnauthorizedException();
 

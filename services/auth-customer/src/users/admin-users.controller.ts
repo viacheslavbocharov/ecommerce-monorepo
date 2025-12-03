@@ -36,7 +36,7 @@ export class AdminUsersController {
     return this.usersService.adminUpdateUser(id, dto);
   }
 
-  @Patch(':id/password')
+  @Patch(':id/change-password')
   changePassword(@Param('id') id: string, @Body() dto: AdminChangePasswordDto) {
     return this.usersService.adminChangePassword(id, dto.newPassword);
   }
