@@ -1,7 +1,9 @@
+import { UserRole } from "../auth/user-role.type";
+
 export interface PublicUser {
   id: string;
   email: string;
-  role: string;
+  role: UserRole;
   isActive: boolean;
   createdAt: Date;
   profile: {

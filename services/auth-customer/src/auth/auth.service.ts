@@ -12,9 +12,10 @@ import { TokenService } from './token.service';
 import { publicUserSelect } from 'src/common/contracts/user/public-user.select';
 import { buildAuthResponse } from './helpers/auth-response.factory';
 import { JwtService } from '@nestjs/jwt';
-import { JwtRefreshPayload } from 'src/common/contracts/jwt/jwt-payload.types';
-import { PublicUser } from 'src/common/contracts/user/public-user.type';
+import { JwtRefreshPayload } from '@ecommerce/shared-contracts/jwt/jwt-payload.types';
+import { PublicUser } from '@ecommerce/shared-contracts/user/public-user.type';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { UserRole } from '@ecommerce/shared-contracts/auth/user-role.type';
 
 @Injectable()
 export class AuthService {
@@ -107,7 +108,7 @@ export class AuthService {
 
     const { accessToken, refreshToken } = await this.token.createTokens({
       sub: payload.sub,
-      role: payload.role,
+      role: payload.role as UserRole,
     });
 
     const newPayload = await this.token.validateRefreshToken(refreshToken);

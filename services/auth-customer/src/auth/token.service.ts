@@ -3,14 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as crypto from 'crypto';
-
-export interface IjwtRefreshBase {
-  sub: string;
-  role: string;
-  jti: string;
-  iat?: number;
-  exp?: number;
-}
+import { JwtRefreshPayload } from '@ecommerce/shared-contracts/jwt/jwt-payload.types';
+import { UserRole } from '@ecommerce/shared-contracts/auth/user-role.type';
 
 @Injectable()
 export class TokenService {
@@ -20,7 +14,7 @@ export class TokenService {
     private readonly jwt: JwtService,
   ) {}
 
-  async createTokens(user: { sub: string; role: string }) {
+  async createTokens(user: { sub: string; role: UserRole }) {
     const jti = crypto.randomUUID();
 
     const refreshExpiresAt = new Date(
@@ -37,12 +31,12 @@ export class TokenService {
     });
 
     const accessToken = await this.jwt.signAsync(
-      { sub: user.sub, role: user.role },
+      { sub: user.sub, role: user.role, type: 'access' },
       { expiresIn: Number(this.config.get<string>('JWT_ACCESS_TTL') ?? '900') },
     );
 
     const refreshToken = await this.jwt.signAsync(
-      { sub: user.sub, role: user.role, jti },
+      { sub: user.sub, role: user.role, jti, type: 'refresh' },
       {
         expiresIn: Number(
           this.config.get<string>('JWT_REFRESH_TTL') ?? '2592000',
@@ -56,10 +50,10 @@ export class TokenService {
     };
   }
 
-  async validateRefreshToken(refreshToken: string): Promise<IjwtRefreshBase> {
-    let payload: IjwtRefreshBase;
+  async validateRefreshToken(refreshToken: string): Promise<JwtRefreshPayload> {
+    let payload: JwtRefreshPayload;
     try {
-      payload = await this.jwt.verifyAsync<IjwtRefreshBase>(refreshToken);
+      payload = await this.jwt.verifyAsync<JwtRefreshPayload>(refreshToken);
     } catch {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }

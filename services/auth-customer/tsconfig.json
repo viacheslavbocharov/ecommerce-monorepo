@@ -17,7 +17,9 @@
     "baseUrl": ".",
     "paths": {
       "src/*": ["./src/*"],
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@ecommerce/shared-contracts": ["../../packages/shared-contracts/src"],
+      "@ecommerce/shared-contracts/*": ["../../packages/shared-contracts/src/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
@@ -26,5 +28,6 @@
     "noImplicitAny": true,
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true
-  }
+  },
+  "references": [{ "path": "../../packages/shared-contracts" }]
 }

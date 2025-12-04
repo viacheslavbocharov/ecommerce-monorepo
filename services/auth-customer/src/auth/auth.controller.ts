@@ -11,12 +11,11 @@ import {
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-
 import type { FastifyReply } from 'fastify/types/reply';
 import type { FastifyRequest } from 'fastify/types/request';
 import { ConfigService } from '@nestjs/config';
 import { buildRefreshCookieBase } from './helpers/auth-response.factory';
-import { JwtPayload } from 'src/common/contracts/jwt/jwt-payload.types';
+import { JwtAccessPayload } from '@ecommerce/shared-contracts/jwt/jwt-payload.types';
 
 @Controller('auth')
 export class AuthController {
@@ -102,7 +101,7 @@ export class AuthController {
   @Post('logout-all')
   @HttpCode(204)
   async logoutAll(
-    @Req() req: FastifyRequest & { user: JwtPayload },
+    @Req() req: FastifyRequest & { user: JwtAccessPayload },
     @Res({ passthrough: true }) res: FastifyReply,
   ) {
     const userId = req.user.sub;
@@ -115,7 +114,7 @@ export class AuthController {
   }
 
   @Get('me')
-  async me(@Req() req: FastifyRequest & { user: JwtPayload }) {
+  async me(@Req() req: FastifyRequest & { user: JwtAccessPayload }) {
     const userId = req.user.sub;
     const user = await this.authService.me(userId);
     return user;

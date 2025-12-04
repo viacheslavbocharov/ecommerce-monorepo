@@ -1,6 +1,6 @@
 import { CookieSerializeOptions } from '@fastify/cookie';
 import { ConfigService } from '@nestjs/config';
-import { PublicUser } from 'src/common/contracts/user/public-user.type';
+import { PublicUser } from '@ecommerce/shared-contracts/user/public-user.type';
 
 export interface TokenResponseOptions {
   config: ConfigService;
