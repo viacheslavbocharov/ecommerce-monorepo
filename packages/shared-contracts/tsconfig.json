@@ -4,8 +4,12 @@
     "outDir": "dist",
     "declaration": true,
     "rootDir": "src",
-    "composite": true
+    "composite": true,
+    "baseUrl": "./src",
+    "paths": {
+      "@ecommerce/shared-contracts": ["./"],
+      "@ecommerce/shared-contracts/*": ["./*"]
+    }
   },
   "include": ["src"]
 }
-

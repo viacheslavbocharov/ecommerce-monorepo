@@ -1,4 +1,4 @@
-import type { UserRole } from "../auth/user-role.type";
+import type { UserRole } from "../auth/user-role.type.ts";
 
 export interface JwtBasePayload {
   sub: string;

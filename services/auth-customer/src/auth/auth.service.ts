@@ -15,7 +15,6 @@ import { JwtService } from '@nestjs/jwt';
 import { JwtRefreshPayload } from '@ecommerce/shared-contracts/jwt/jwt-payload.types';
 import { PublicUser } from '@ecommerce/shared-contracts/user/public-user.type';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UserRole } from '@ecommerce/shared-contracts/auth/user-role.type';
 
 @Injectable()
 export class AuthService {
@@ -108,7 +107,7 @@ export class AuthService {
 
     const { accessToken, refreshToken } = await this.token.createTokens({
       sub: payload.sub,
-      role: payload.role as UserRole,
+      role: payload.role,
     });
 
     const newPayload = await this.token.validateRefreshToken(refreshToken);

@@ -17,8 +17,8 @@
     "baseUrl": "./",
     "paths": {
       "@/*": ["./src/*"],
-      "@acme/shared-contracts": ["../../packages/shared-contracts/src"],
-      "@acme/shared-contracts/*": ["../../packages/shared-contracts/src/*"]
+      "@ecommerce/shared-contracts": ["../../packages/shared-contracts/src"],
+      "@ecommerce/shared-contracts/*": ["../../packages/shared-contracts/src/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
@@ -27,5 +27,6 @@
     "noImplicitAny": true,
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true
-  }
+  },
+  "include": ["src", "src/types/**/*.d.ts"]
 }
